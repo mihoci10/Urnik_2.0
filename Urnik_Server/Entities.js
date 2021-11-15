@@ -1,6 +1,6 @@
 //import * as tf from '@tensorflow/tfjs-node-gpu'
 
-class Entity{
+export class Entity{
 
     _id;
 
@@ -13,7 +13,89 @@ class Entity{
     }
 }
 
-class Person extends Entity {
+export class Time extends Entity {
+
+    _day;
+    _hour;
+    _minutes;
+
+    constructor(day, hour, minutes){
+        super();
+        this._day = day;
+        this._hour = hour;
+        this._minutes = minutes;
+    }
+
+    get day(){
+        return this._day;
+    }
+    get hour(){
+        return this._hour;
+    }
+    get minutes(){
+        return this._minutes;
+    }
+
+    toString(){
+        return `Day ${this._day} ${this._hour}:${this._minutes}`;
+    }
+    
+    add(time){
+        this._day = this._day + time.day;
+        this._hour = this._hour + time.hour;
+        this._minutes = this._minutes + time.minutes;
+    }
+
+    sub(time){
+        this._day = this._day - time.day;
+        this._hour = this._hour - time.hour;
+        this._minutes = this._minutes - time.minutes;
+    }
+
+}
+
+export const TimeSlotType = {
+    DESIRABLE: 0,
+    UNDESIRABLE: 1,
+}
+
+export class TimeSlot extends Entity {
+    
+    _startTime;
+    _duration;
+
+    constructor(startTime, duration){
+        super();
+        this._startTime = startTime;
+        this._duration = duration;
+    }
+
+    get startTime(){
+        return this._startTime;
+    }
+
+    get duration(){
+        return this._duration;
+    }
+
+}
+
+export class TimeSlotRestrictor extends TimeSlot{
+
+    _type;
+
+    constructor(startTime, duration, type){
+        super(startTime, duration);
+        this._type = type;
+    }
+
+    get type(){
+        return this._type;
+    }
+
+}
+
+export class Person extends Entity {
 
     _name;
     _surname;
@@ -24,16 +106,31 @@ class Person extends Entity {
         this._surname = surname;
     }
 
+    get name(){
+        return this._name;
+    }
+
+    get surname(){
+        return this._surname;
+    }
+
     toString(){
         return undefined;
     }
 
 }
 
-class Teacher extends Person{
+export class Teacher extends Person{
+
+    _restrictionSlots;
 
     constructor(name, surname){
         super(name, surname);
+        this._restrictionSlots = new Array();
+    }
+
+    get timeSlots(){
+        return this._restrictionSlots;
     }
 
     toString(){
@@ -42,7 +139,7 @@ class Teacher extends Person{
 
 }
 
-class Student extends Person{
+export class Student extends Person{
 
     _studentId;
 
@@ -51,13 +148,17 @@ class Student extends Person{
         this._studentId = studentId; 
     }
 
+    get _studentId(){
+        return this._studentId;
+    }
+
     toString(){
         return `${this._name} ${this._surname}, ${this._studentId}`;
     }
 
 }
 
-class Group extends Entity{
+export class Group extends Entity{
 
     _userList;
 
@@ -66,9 +167,13 @@ class Group extends Entity{
         this._userList = new Set(); 
     }
 
+    get userList(){
+        return this._userList;
+    }
+
 }
 
-class Hall extends Entity{
+export class Hall extends Entity{
 
     _name;
     _capacity;
@@ -79,23 +184,44 @@ class Hall extends Entity{
         this._capacity = capacity;
     }
 
+    get name(){
+        return this._name;
+    }
+
+    get capacity(){
+        this._capacity;
+    }
+
 }
 
-class Course extends Entity {
+export class Course extends Entity {
 
     _name;
     _lecturer;
     _asistants;
 
-    constructor(name, lecturer, asistants){
+    constructor(name, lecturer){
+        super();
         this._name = name;
         this._lecturer = lecturer;
-        this._asistants = asistants;
+        this._asistants = new Array();
+    }
+
+    get name(){
+        return this._name;
+    }
+
+    get lecturer(){
+        return this._lecturer;
+    }
+
+    get asistants(){
+        return this._asistants;
     }
 
 }
 
-class Activity extends Entity {
+export class Activity extends Entity {
 
     _course;
     _asignee;
@@ -104,6 +230,7 @@ class Activity extends Entity {
     _duration;
 
     constructor(course, asignee, requirements, duration){
+        super();
         this._course = course;
         this._asignee = asignee;
         this._requirements = requirements;
@@ -112,8 +239,10 @@ class Activity extends Entity {
     }
 }
 
-class Timetable{
+export class Timetable{
+
     constructor(){
 
     }
+    
 }
