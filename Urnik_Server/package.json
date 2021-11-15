@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "serve": "nodemon Entities.js"
+    "serve": "nodemon --experimental-modules --es-module-specifier-resolution=node TimetableGenerator.js"
   },
   "author": "",
   "license": "ISC",
