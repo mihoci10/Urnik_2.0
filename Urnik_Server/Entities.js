@@ -8,9 +8,18 @@ export class Entity{
         this._id = id;
     }
 
-    getId() {
+    get id() {
         return this._id;    
     }
+
+    
+}
+
+export const TS_Intersect = {
+    INTERSECT_NON: 0,
+    INTERSECT_START: 1,
+    INTERSECT_MID: 2,
+    INTERSECT_END: 3,
 }
 
 export class Time extends Entity {
@@ -44,17 +53,80 @@ export class Time extends Entity {
         this._day = this._day + time.day;
         this._hour = this._hour + time.hour;
         this._minutes = this._minutes + time.minutes;
-    }
 
+        this._hour += Math.floor(this._minutes / 60)
+        this._minutes = this._minutes % 60;
+
+        this._day += Math.floor(this._hour / 24);
+        this._hour = this._hour % 24;
+    }
+    
     sub(time){
         this._day = this._day - time.day;
         this._hour = this._hour - time.hour;
         this._minutes = this._minutes - time.minutes;
+
+        this._hour += Math.floor(this._minutes / 60)
+        if(this.minutes < 0)
+            this._minutes = 60 + this._minutes % 60;
+
+        this._day += Math.floor(this._hour / 24);
+        if(this._hour < 0)
+            this._hour = 24 + this._hour % 24;
+    }
+
+    static equals(t1, t2){
+        return t1.day === t2.day && t1.hour === t2.hour && t1.minutes === t2.minutes;
+    }
+
+    static isGreater(t1, t2){
+        if(t1.day > t2.day)
+            return true;
+        if(t1.day == t2.day)
+        {
+            if(t1.hour > t2.hour)
+                return true;
+            if(t1.hour == t2.hour)
+            {
+                if(t1.minutes > t2.minutes)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    static isSmaller(t1, t2){
+        if(t1.day < t2.day)
+            return true;
+        if(t1.day == t2.day)
+        {
+            if(t1.hour < t2.hour)
+                return true;
+            if(t1.hour == t2.hour)
+            {
+                if(t1.minutes < t2.minutes)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    isBetween(t1, t2){
+        if(Time.equals(this, t1))
+            return TS_Intersect.INTERSECT_START;
+
+        if(Time.equals(this, t2))
+            return TS_Intersect.INTERSECT_END;
+
+        if(Time.isGreater(this, t1) && Time.isSmaller(this, t2))
+            return TS_Intersect.INTERSECT_MID;
+
+        return TS_Intersect.INTERSECT_NON;
     }
 
 }
 
-export const TimeSlotType = {
+export const TS_Type = {
     DESIRABLE: 0,
     UNDESIRABLE: 1,
 }
@@ -116,6 +188,10 @@ export class Person extends Entity {
 
     toString(){
         return undefined;
+    }
+
+    static equals(p1, p2){
+        return p1.id == p2.id;
     }
 
 }
@@ -192,6 +268,10 @@ export class Hall extends Entity{
         this._capacity;
     }
 
+    static equals(h1, h2){
+        return h1.id == h2.id;
+    }
+
 }
 
 export class Course extends Entity {
@@ -237,12 +317,83 @@ export class Activity extends Entity {
         this._duration = duration;
         this._attendees = new Array();
     }
+
+    get course(){
+        return this._course;
+    }
+
+    get asignee(){
+        return this._asignee;
+    }
+
+    get attendees(){
+        return this._attendees;
+    }
+
+    get requirements(){
+        return this._requirements;
+    }
+
+    get duration(){
+        return this._duration;
+    }
 }
 
-export class Timetable{
+export class TimetableSlot extends Entity {
 
-    constructor(){
+    _activity;
+    _hall;
+    _startTime;
+    _endTime;
 
+    constructor(activity, hall, startTime){
+        super();
+        this._activity = activity;
+        this._hall = hall;
+        this._startTime = new Time(startTime.day, startTime.hour, startTime.minutes);
+        this._endTime = (new Time(startTime.day, startTime.hour, startTime.minutes)).add(this._activity.duration);
     }
-    
+
+    getTSIntersetion(time){
+        return time.isBetween(this._startTime, this._endTime);
+    }
+
+    hasAsignee(asignee){
+        return Person.equals(this._activity.asignee, asignee);
+    }
+
+    hasHall(hall){
+        return Hall.equals(this._hall, hall);
+    }
+
+}
+
+export class Timetable extends Entity{
+
+    _numDays;
+    _openTime;
+    _closeTime;
+
+    _slots;
+
+    constructor(numDays, openTime, closeTime){
+        super();
+        this._numDays = numDays;
+        this._openTime = openTime;
+        this._closeTime = closeTime;
+        this._slots = new Array();
+    }
+
+    get numDays(){
+        return this._numDays;
+    }
+
+    get openTime(){
+        return this._openTime;
+    }
+
+    get closeTime(){
+        return this._closeTime;
+    }
+
 }
