@@ -134,20 +134,24 @@ export const TS_Type = {
 export class TimeSlot extends Entity {
     
     _startTime;
-    _duration;
+    _endTime;
 
     constructor(startTime, duration){
         super();
-        this._startTime = startTime;
-        this._duration = duration;
+        this._startTime = new Time(startTime.day, startTime.hour, startTime.minutes);
+        this._endTime = (new Time(startTime.day, startTime.hour, startTime.minutes)).add(duration);
     }
 
     get startTime(){
         return this._startTime;
     }
 
-    get duration(){
-        return this._duration;
+    get endTime(){
+        return this._endTime;
+    }
+
+    getIntersection(time){
+        return time.isBetween(this._startTime, this._endTime);
     }
 
 }
@@ -224,7 +228,7 @@ export class Student extends Person{
         this._studentId = studentId; 
     }
 
-    get _studentId(){
+    get studentId(){
         return this._studentId;
     }
 
@@ -279,12 +283,14 @@ export class Course extends Entity {
     _name;
     _lecturer;
     _asistants;
+    _students;
 
     constructor(name, lecturer){
         super();
         this._name = name;
         this._lecturer = lecturer;
         this._asistants = new Array();
+        this._students = []
     }
 
     get name(){
@@ -298,6 +304,16 @@ export class Course extends Entity {
     get asistants(){
         return this._asistants;
     }
+    set asistants(asistants){
+        this._asistants = asistants;
+    }
+
+    get students(){
+        return this._students;
+    }
+    set students(students){
+        this._students = students;
+    }
 
 }
 
@@ -305,17 +321,15 @@ export class Activity extends Entity {
 
     _course;
     _asignee;
-    _attendees;
     _requirements;
     _duration;
 
-    constructor(course, asignee, requirements, duration){
+    constructor(course, asignee, duration){
         super();
         this._course = course;
         this._asignee = asignee;
-        this._requirements = requirements;
+        this._requirements = [];
         this._duration = duration;
-        this._attendees = new Array();
     }
 
     get course(){
@@ -326,12 +340,11 @@ export class Activity extends Entity {
         return this._asignee;
     }
 
-    get attendees(){
-        return this._attendees;
-    }
-
     get requirements(){
         return this._requirements;
+    }
+    set requirements(requirements){
+        this._requirements = requirements;
     }
 
     get duration(){
@@ -343,27 +356,32 @@ export class TimetableSlot extends Entity {
 
     _activity;
     _hall;
-    _startTime;
-    _endTime;
+    _timeSlot;
+    _attendees;
 
     constructor(activity, hall, startTime){
         super();
         this._activity = activity;
         this._hall = hall;
-        this._startTime = new Time(startTime.day, startTime.hour, startTime.minutes);
-        this._endTime = (new Time(startTime.day, startTime.hour, startTime.minutes)).add(this._activity.duration);
+
+        endT = (new Time(startTime.day, startTime.hour, startTime.minutes)).add(this._activity.duration);
+        this._timeSlot = new TimeSlot(startTime, endT);
     }
 
     getTSIntersetion(time){
-        return time.isBetween(this._startTime, this._endTime);
+        return this._timeSlot.getIntersection(time);
     }
-
     hasAsignee(asignee){
         return Person.equals(this._activity.asignee, asignee);
     }
-
     hasHall(hall){
         return Hall.equals(this._hall, hall);
+    }
+    hasAttendee(attendee){
+        for (i = 0; i < this._attendees.length; i++)
+            if(Person.equals(attendee, this._attendees[i]))
+                return true;
+        return false;
     }
 
 }
