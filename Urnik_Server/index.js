@@ -1,5 +1,8 @@
 import { Activity, Course, Hall, Student, Teacher, Time } from "./Entities";
 import { TimetableGenerator } from "./TimetableGenerator";
+import tf from "@tensorflow/tfjs-node"
+
+tf.setBackend('cpu');
 
 let tg = new TimetableGenerator(1, new Time(0,0,0), new Time(0,5,0));
 

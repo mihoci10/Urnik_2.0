@@ -366,6 +366,7 @@ export class TimetableSlot extends Entity {
 
         endT = (new Time(startTime.day, startTime.hour, startTime.minutes)).add(this._activity.duration);
         this._timeSlot = new TimeSlot(startTime, endT);
+        this._attendees = [];
     }
 
     getTSIntersetion(time){
@@ -383,6 +384,13 @@ export class TimetableSlot extends Entity {
                 return true;
         return false;
     }
+    countAtendees(attendees){
+        let c = 0;
+        for (i = 0; i < this._attendees.length; i++)
+            if(attendees.includes(this._attendees[i]))
+                c += 1;
+        return c;
+    }
 
 }
 
@@ -399,19 +407,27 @@ export class Timetable extends Entity{
         this._numDays = numDays;
         this._openTime = openTime;
         this._closeTime = closeTime;
-        this._slots = new Array();
+        this._slots = [];
     }
 
     get numDays(){
         return this._numDays;
     }
-
     get openTime(){
         return this._openTime;
     }
-
     get closeTime(){
         return this._closeTime;
+    }
+
+    getStudentOverlaps(ts, students){
+        let overlap = 0;
+        for (let i = 0; i < this._slots.length; i++) {
+            if([TS_Intersect.INTERSECT_START, TS_Intersect.INTERSECT_MID].includes(this._slots[i].getTSIntersetion(ts))){
+                overlap += this._slots[i].countAtendees(students);
+            }
+        }
+        return overlap;
     }
 
 }
