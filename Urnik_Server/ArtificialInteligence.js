@@ -80,10 +80,10 @@ export class NeuralNetwork{
         model.add(hidden);
         const output = tf.layers.dense({
             units: this._outputNodes,
-            activation: 'softmax',
+            activation: 'sigmoid',
         });
         model.add(output);
-        model.compile();
+        //model.compile();
         return model;
     }
 

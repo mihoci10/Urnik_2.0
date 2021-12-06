@@ -1,17 +1,23 @@
-//import * as tf from '@tensorflow/tfjs-node-gpu'
+import { randomBytes } from "crypto";
 
 export class Entity{
 
     _id;
 
     constructor(id = undefined){
-        this._id = id;
+        if(id == undefined)
+            this._id = randomBytes(20);
+        else
+            this._id = id;
     }
 
     get id() {
         return this._id;    
     }
 
+    toString(){
+        return this._id.toString('hex');
+    }
     
 }
 
@@ -45,8 +51,8 @@ export class Time extends Entity {
         return this._minutes;
     }
 
-    toString(){
-        return `Day ${this._day} ${this._hour}:${this._minutes}`;
+    format(){
+        return `${this._day}:${this._hour}:${this._minutes}`;
     }
     
     add(time){
@@ -124,6 +130,10 @@ export class Time extends Entity {
         return TS_Intersect.INTERSECT_NON;
     }
 
+    copy(){
+        return new Time(this._day, this._hour, this._minutes);
+    }
+
 }
 
 export const TS_Type = {
@@ -136,10 +146,10 @@ export class TimeSlot extends Entity {
     _startTime;
     _endTime;
 
-    constructor(startTime, duration){
+    constructor(startTime, endTime){
         super();
-        this._startTime = new Time(startTime.day, startTime.hour, startTime.minutes);
-        this._endTime = (new Time(startTime.day, startTime.hour, startTime.minutes)).add(duration);
+        this._startTime = startTime.copy();
+        this._endTime = endTime.copy();
     }
 
     get startTime(){
@@ -190,10 +200,6 @@ export class Person extends Entity {
         return this._surname;
     }
 
-    toString(){
-        return undefined;
-    }
-
     static equals(p1, p2){
         return p1.id == p2.id;
     }
@@ -206,15 +212,11 @@ export class Teacher extends Person{
 
     constructor(name, surname){
         super(name, surname);
-        this._restrictionSlots = new Array();
+        this._restrictionSlots = [];
     }
 
     get timeSlots(){
         return this._restrictionSlots;
-    }
-
-    toString(){
-        return `${this._name} ${this._surname}`;
     }
 
 }
@@ -222,9 +224,11 @@ export class Teacher extends Person{
 export class Student extends Person{
 
     _studentId;
+    _foreign;
 
-    constructor(name, surname, studentId = undefined){
+    constructor(name, surname, foreign = false, studentId = undefined){
         super(name, surname);
+        this._foreign = foreign
         this._studentId = studentId; 
     }
 
@@ -232,8 +236,8 @@ export class Student extends Person{
         return this._studentId;
     }
 
-    toString(){
-        return `${this._name} ${this._surname}, ${this._studentId}`;
+    get foreign(){
+        return this._foreign;
     }
 
 }
@@ -269,7 +273,7 @@ export class Hall extends Entity{
     }
 
     get capacity(){
-        this._capacity;
+        return this._capacity;
     }
 
     static equals(h1, h2){
@@ -284,13 +288,15 @@ export class Course extends Entity {
     _lecturer;
     _asistants;
     _students;
+    _activities;
 
     constructor(name, lecturer){
         super();
         this._name = name;
         this._lecturer = lecturer;
         this._asistants = new Array();
-        this._students = []
+        this._students = [];
+        this._activities = [];
     }
 
     get name(){
@@ -315,6 +321,19 @@ export class Course extends Entity {
         this._students = students;
     }
 
+    get activities(){
+        return this._activities;
+    }
+    addActivity(activity){
+        this._activities.push(activity);
+    }
+
+}
+
+export const ACT_Attendance = {
+    ALL: 0,
+    FOREIGN: 1,
+    NATIVE: 2,
 }
 
 export class Activity extends Entity {
@@ -323,13 +342,21 @@ export class Activity extends Entity {
     _asignee;
     _requirements;
     _duration;
+    _attendees;
+    _attendance;
+    _maxAttendees;
 
-    constructor(course, asignee, duration){
+    constructor(course, asignee, duration, attendance, maxAttendees = 0){
         super();
         this._course = course;
         this._asignee = asignee;
         this._requirements = [];
         this._duration = duration;
+        this._attendees = [];
+        this._attendance = attendance;
+        this._maxAttendees = maxAttendees;
+
+        this._course.addActivity(this);
     }
 
     get course(){
@@ -350,6 +377,24 @@ export class Activity extends Entity {
     get duration(){
         return this._duration;
     }
+
+    get attendees(){
+        return this._attendees;
+    }
+    set attendees(attendees){
+        this._attendees = attendees;
+    }
+    addAttendee(attendee){
+        this._attendees.push(attendee);
+    }
+    
+    get attendance(){
+        return this._attendance;
+    }
+
+    get maxAttendees(){
+        return this._maxAttendees;
+    }
 }
 
 export class TimetableSlot extends Entity {
@@ -357,16 +402,25 @@ export class TimetableSlot extends Entity {
     _activity;
     _hall;
     _timeSlot;
-    _attendees;
 
     constructor(activity, hall, startTime){
         super();
         this._activity = activity;
         this._hall = hall;
 
-        endT = (new Time(startTime.day, startTime.hour, startTime.minutes)).add(this._activity.duration);
+        let endT = new Time(startTime.day, startTime.hour, startTime.minutes);
+        endT.add(this._activity.duration);
         this._timeSlot = new TimeSlot(startTime, endT);
-        this._attendees = [];
+    }
+
+    get activity(){
+        return this._activity;
+    }
+    get timeslot(){
+        return this._timeSlot;
+    }
+    get hall(){
+        return this._hall;
     }
 
     getTSIntersetion(time){
@@ -379,15 +433,15 @@ export class TimetableSlot extends Entity {
         return Hall.equals(this._hall, hall);
     }
     hasAttendee(attendee){
-        for (i = 0; i < this._attendees.length; i++)
-            if(Person.equals(attendee, this._attendees[i]))
+        for (i = 0; i < this._activity.attendees.length; i++)
+            if(Person.equals(attendee, this._activity.attendees[i]))
                 return true;
         return false;
     }
     countAtendees(attendees){
         let c = 0;
-        for (i = 0; i < this._attendees.length; i++)
-            if(attendees.includes(this._attendees[i]))
+        for (let i = 0; i < this._activity.attendees.length; i++)
+            if(attendees.includes(this._activity.attendees[i]))
                 c += 1;
         return c;
     }
@@ -419,6 +473,13 @@ export class Timetable extends Entity{
     get closeTime(){
         return this._closeTime;
     }
+    get slots(){
+        return this._slots;
+    }
+
+    addSlot(activity, hall, timestamp){
+        this._slots.push(new TimetableSlot(activity, hall, timestamp));
+    }
 
     getStudentOverlaps(ts, students){
         let overlap = 0;
@@ -428,6 +489,53 @@ export class Timetable extends Entity{
             }
         }
         return overlap;
+    }
+
+    getTeacherOverlap(ts, teacher){
+        let overlap = false;
+        for (let i = 0; i < this._slots.length; i++) {
+            if([TS_Intersect.INTERSECT_START, TS_Intersect.INTERSECT_MID].includes(this._slots[i].getTSIntersetion(ts))){
+                overlap = overlap || (this._slots[i].activity.asignee == teacher);
+            }
+        }
+        return overlap;
+    }
+
+    getHallOverlap(ts, hall){
+        let overlap = false;
+        for (let i = 0; i < this._slots.length; i++) {
+            if([TS_Intersect.INTERSECT_START, TS_Intersect.INTERSECT_MID].includes(this._slots[i].getTSIntersetion(ts))){
+                overlap = overlap || (this._slots[i].hall == hall);
+            }
+        }
+        return overlap;
+    }
+    
+    forEachTs(srchIncr, func){
+        let it = this._openTime.copy();
+        let end = new Time(this._numDays - 1, this._closeTime.hour, this._closeTime.minutes);
+
+        while(!Time.equals(it, end)){
+
+            func(it.copy())
+
+            it.add(srchIncr);
+            if(it.hour > end.hour && it.minutes > end.minutes)
+                it = new Time(it.day + 1, this._openTime.hour, this._openTime.minutes);
+        }
+    }
+
+    debug(){
+        let cnt = 0;
+        console.log("=== Timetable output ===");
+        this._slots.forEach(slot => {
+            console.log(`Item ${cnt}: ${slot.activity.course.name}`);
+            console.log(`Assignee: ${slot.activity.asignee.surname}, ${slot.activity.asignee.name}`);
+            console.log(`Hall: ${slot.hall.name}`);
+            console.log(`From ${slot.timeslot.startTime.format()} to ${slot.timeslot.endTime.format()}`);
+            cnt++;
+        }); 
+        console.log("===  End timetable   ===");
     }
 
 }
