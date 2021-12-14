@@ -139,7 +139,7 @@ class Worker{
         let outputs = [];
         let locTime = [];
         this._timetable.forEachTs(this._timeUnit, ts => {
-            if(this._timetable.getTeacherOverlap(ts, activity.asignee))
+            if(!this._timetable.insideLimits(ts) || this._timetable.getTeacherOverlap(ts, activity.asignee))
                 return;
 
             this._halls.forEach(hall => {
@@ -155,7 +155,7 @@ class Worker{
                 locTime.push([hall, ts.copy()]);
             });
         });  
-        let i = outputs.reduce((iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0);;
+        let i = outputs.reduce((iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0);
         this._timetable.addSlot(activity, locTime[i][0], locTime[i][1]);
 
         if(this._activities.length <= 0)

@@ -481,6 +481,13 @@ export class Timetable extends Entity{
         this._slots.push(new TimetableSlot(activity, hall, timestamp));
     }
 
+    insideLimits(ts){
+        let start = new Time(ts.day, this._openTime.hour, this._openTime.minutes);
+        let end = new Time(ts.day, this._closeTime.hour, this._closeTime.minutes);
+        let slot = new TimeSlot(start, end);
+        return [TS_Intersect.INTERSECT_START, TS_Intersect.INTERSECT_MID].includes(slot.getIntersection(ts));
+    }
+
     getStudentOverlaps(ts, students){
         let overlap = 0;
         for (let i = 0; i < this._slots.length; i++) {
@@ -530,9 +537,9 @@ export class Timetable extends Entity{
         console.log("=== Timetable output ===");
         this._slots.forEach(slot => {
             console.log(`Item ${cnt}: ${slot.activity.course.name}`);
-            console.log(`Assignee: ${slot.activity.asignee.surname}, ${slot.activity.asignee.name}`);
-            console.log(`Hall: ${slot.hall.name}`);
-            console.log(`From ${slot.timeslot.startTime.format()} to ${slot.timeslot.endTime.format()}`);
+            console.log(`   Assignee: ${slot.activity.asignee.surname}, ${slot.activity.asignee.name}`);
+            console.log(`   Hall: ${slot.hall.name}`);
+            console.log(`   From ${slot.timeslot.startTime.format()} to ${slot.timeslot.endTime.format()}`);
             cnt++;
         }); 
         console.log("===  End timetable   ===");
