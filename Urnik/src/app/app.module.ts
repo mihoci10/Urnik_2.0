@@ -9,6 +9,10 @@ import { AdminComponent } from './admin/admin.component';
 import { DodajPredmetComponent } from './dodaj-predmet/dodaj-predmet.component';
 import { DodajProfesorjaComponent } from './dodaj-profesorja/dodaj-profesorja.component';
 import { UrnikComponent } from './urnik/urnik.component';
+import { ActivityComponent } from './components/activity/activity.component';
+import { TimetableComponent } from './components/timetable/timetable.component';
+
+import {ScheduleModule, DayService, WeekService, WorkWeekService, MonthService, AgendaService} from '@syncfusion/ej2-angular-schedule'
 
 @NgModule({
   declarations: [
@@ -18,13 +22,16 @@ import { UrnikComponent } from './urnik/urnik.component';
     AdminComponent,
     DodajPredmetComponent,
     DodajProfesorjaComponent,
-    UrnikComponent
+    UrnikComponent,
+    ActivityComponent,
+    TimetableComponent
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    ScheduleModule
   ],
-  providers: [],
+  providers: [DayService, WeekService, WorkWeekService, MonthService, AgendaService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { TimetableComponent } from '../components/timetable/timetable.component';
 
 @Component({
   selector: 'app-urnik',
